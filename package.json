@@ -1,0 +1,13 @@
+{
+  "name": "author-of-the-day",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Daily Wordle-style game: guess the author in 5 attempts (uk/en). Static site for GitHub Pages.",
+  "scripts": {
+    "test": "node tests/run.js && node tests/run-browser.js",
+    "test:unit": "node tests/run.js",
+    "test:browser": "node tests/run-browser.js",
+    "factcheck": "node tests/factcheck.js"
+  },
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="description" content="Вгадай автора дня за 5 спроб — щоденна гра для любителів книжок." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Автор дня / Author of the Day" />
+  <meta property="og:description" content="Вгадай автора дня за 5 спроб · Guess the author of the day in 5 attempts" />
+  <title data-i18n="page_title">Автор дня</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="logic.js"></script>
+  <script src="common.js"></script>
+  <script src="i18n.js"></script>
+  <script src="authors.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="tb-left">
+    <a class="tb-btn" href="about.html" data-i18n-aria="aria_rules" aria-label="Правила">?</a>
+  </div>
+
+  <h1 class="tb-title" id="appTitle" data-i18n="title">Автор дня</h1>
+
+  <div class="tb-right">
+    <a class="tb-btn" id="btnStats" href="stats.html" data-i18n-aria="aria_stats" aria-label="Статистика">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h2v18H5V3zm6 6h2v12h-2V9zm6-4h2v16h-2V5z"/></svg>
+    </a>
+    <a id="langToggle" class="lang-btn" href="?lang=en" hreflang="en" data-i18n-aria="aria_lang" aria-label="Змінити мову">ENG</a>
+  </div>
+</header>
+
+<main class="screen">
+  <section id="hints" class="hints" data-i18n-aria="hints_label" aria-label="Підказки"></section>
+
+  <div class="search">
+    <form id="guess-form" class="card input-card" autocomplete="off" novalidate>
+      <input
+        id="guess-input"
+        type="text"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded="false"
+        aria-controls="suggestions"
+        data-i18n-placeholder="search_placeholder"
+        data-i18n-aria="search_placeholder"
+        aria-label="Введіть ім’я автора"
+        placeholder="Введіть ім’я автора"
+        enterkeyhint="go"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+      <button type="submit" hidden></button>
+    </form>
+    <ul id="suggestions" class="suggestions" role="listbox" data-i18n-aria="aria_suggestions" aria-label="Варіанти авторів" hidden></ul>
+  </div>
+
+  <div class="attempts" id="attempts"></div>
+
+  <section id="guesses" class="guesses"></section>
+  <p id="empty" class="empty" data-i18n="empty_state">Введіть автора, щоб побачити, чим він схожий на автора дня</p>
+</main>
+
+<div id="sr" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<div id="resultModal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="resTitle">
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__card">
+    <button class="modal__x" type="button" data-close data-i18n-aria="close" aria-label="Закрити">✕</button>
+    <h2 class="modal__title" id="resTitle"></h2>
+    <p class="modal__subtitle" id="resSub"></p>
+    <div class="modal__word" id="resName"></div>
+
+    <dl class="modal__info" id="resInfo"></dl>
+
+    <div class="modal__actions">
+      <a id="learnMore" class="tb-btn modal__btn modal__btn--primary" target="_blank" rel="noopener noreferrer" data-i18n="learn_more">Дізнатися більше</a>
+      <button id="shareBtn" class="tb-btn modal__btn" type="button" data-i18n="share">Поділитися</button>
+    </div>
+    <p class="modal__next"><span data-i18n="next_in">Наступний автор через</span> <time id="countdown">--:--:--</time></p>
+  </div>
+</div>
+
+</body>
+</html>

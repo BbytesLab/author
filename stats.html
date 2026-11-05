@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="description" content="" />
+  <title data-i18n="page_title_stats">Статистика — Автор дня</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="logic.js"></script>
+  <script src="common.js"></script>
+  <script src="i18n.js"></script>
+</head>
+<body>
+  <main class="screen screen--page">
+    <section class="card about-card">
+      <h1 data-i18n="stats_title"></h1>
+
+      <div class="stats-grid" id="stGrid"></div>
+
+      <h2 class="stats-sub" data-i18n="stats_dist"></h2>
+      <div class="dist" id="stDist"></div>
+
+      <p class="about-back">
+        <a href="index.html" class="tb-btn" data-i18n="stats_back"></a>
+      </p>
+    </section>
+  </main>
+
+  <script src="stats.js"></script>
+</body>
+</html>

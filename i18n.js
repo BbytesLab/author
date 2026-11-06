@@ -4,11 +4,10 @@
   const { store } = window.Common;
 
   function detect() {
-    // A link like index.html?lang=en opens the English version (and is remembered).
     try {
       const fromUrl = new URLSearchParams(location.search).get('lang');
       if (fromUrl && SUPPORTED.includes(fromUrl)) { store.set('lang', fromUrl); return fromUrl; }
-    } catch (_) { /* old browser: ignore */ }
+    } catch (_) {  }
     const saved = store.get('lang');
     if (saved && SUPPORTED.includes(saved)) return saved;
     const n = (navigator.language || 'uk').toLowerCase();
@@ -204,7 +203,6 @@
   const t = (key) => (DICTS[current] && DICTS[current][key]) || key;
   const getLang = () => current;
 
-  // data-i18n -> text, data-i18n-aria -> aria-label, data-i18n-placeholder -> placeholder
   function applyI18n() {
     document.documentElement.lang = current;
     document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
@@ -225,9 +223,8 @@
     store.set('lang', lang);
     applyI18n();
     try {
-      // keep the address bar in step so the current URL is a shareable link to this language
       if (/[?&]lang=/.test(location.search)) history.replaceState(null, '', '?lang=' + lang);
-    } catch (_) { /* file:// or sandboxed frame */ }
+    } catch (_) {  }
   }
 
   window.I18N = { t, getLang, setLang, applyI18n, SUPPORTED, DICTS };

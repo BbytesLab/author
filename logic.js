@@ -1,12 +1,8 @@
 'use strict';
-/* Pure game logic (no DOM) — shared by the browser and by tests/logic.test.js. */
 (function (root) {
   const MAX_ATTEMPTS = 5;
-  const HINT_ORDER = ['works', 'pseudonym', 'award', 'classic']; // revealed one per wrong attempt
+  const HINT_ORDER = ['works', 'classic', 'pseudonym', 'award'];
 
-  /* ---- day & author of the day ---- */
-
-  // Day number of the player's LOCAL calendar date -> the author changes at local 00:00.
   function dayNumber(date) {
     const d = date || new Date();
     return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
@@ -23,41 +19,56 @@
     };
   }
 
-  // Deterministic shuffle of [0..n) for a given cycle number (Fisher–Yates).
-  function permutation(n, cycle) {
-    const rnd = mulberry32(cycle * 2654435761 + 12345);
-    const p = Array.from({ length: n }, (_, i) => i);
-    for (let i = n - 1; i > 0; i--) {
+  function shuffle(items, rnd) {
+    const p = items.slice();
+    for (let i = p.length - 1; i > 0; i--) {
       const j = Math.floor(rnd() * (i + 1));
       const tmp = p[i]; p[i] = p[j]; p[j] = tmp;
     }
     return p;
   }
 
-  // Every author appears exactly once per cycle of N days (no repeats), same for all players.
-  function authorIndexForDay(day, n) {
+  const isUkrainian = (a) => a.country === 'UA';
+
+  const SEED = 12346;
+
+  function cycleOrder(authors, cycle) {
+    const n = authors.length;
+    const rnd = mulberry32(cycle * 2654435761 + SEED);
+    const ua = shuffle(authors.map((a, i) => i).filter((i) => isUkrainian(authors[i])), rnd);
+    const world = shuffle(authors.map((a, i) => i).filter((i) => !isUkrainian(authors[i])), rnd);
+    const slots = new Set();
+    for (let k = 0; k < ua.length; k++) {
+      const from = Math.floor((k * n) / ua.length), to = Math.floor(((k + 1) * n) / ua.length);
+      slots.add(from + Math.floor(rnd() * Math.max(1, to - from)));
+    }
+    let u = 0, w = 0;
+    const order = [];
+    for (let day = 0; day < n; day++) order.push(slots.has(day) ? ua[u++] : world[w++]);
+    return order;
+  }
+
+  function authorIndexForDay(day, authors) {
+    const n = authors.length;
     const cycle = Math.floor(day / n);
     const pos = day - cycle * n;
-    const perm = permutation(n, cycle);
+    const order = cycleOrder(authors, cycle);
     if (cycle > 0 && n > 1) {
-      // avoid the same author two days in a row across the cycle boundary
-      const prevLast = permutation(n, cycle - 1)[n - 1];
-      if (perm[0] === prevLast) { const t = perm[0]; perm[0] = perm[1]; perm[1] = t; }
+      const prevLast = cycleOrder(authors, cycle - 1)[n - 1];
+      if (order[0] === prevLast) { const t = order[0]; order[0] = order[1]; order[1] = t; }
     }
-    return perm[pos];
+    return order[pos];
   }
 
   function authorOfDay(day, authors) {
-    return authors[authorIndexForDay(day, authors.length)];
+    return authors[authorIndexForDay(day, authors)];
   }
-
-  /* ---- search ---- */
 
   function normalize(s) {
     return String(s)
       .toLowerCase()
-      .normalize('NFD').replace(/[̀-ͯ]/g, '') // é -> e, ë -> e
-      .replace(/ё/g, 'е').replace(/ґ/g, 'г') // NFD above already folds й->и and ї->і
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/ё/g, 'е').replace(/ґ/g, 'г')
       .replace(/[’ʼ`'‘.]/g, '')
       .replace(/ł/g, 'l').replace(/ø/g, 'o').replace(/ß/g, 'ss')
       .replace(/[^a-zа-яіє0-9]+/g, ' ')
@@ -74,11 +85,6 @@
     return a._keys;
   }
 
-  /**
-   * Suggestions for the dropdown. Starts at 2 characters.
-   * Every query word must be the beginning of a word in one of the author's names (uk, en or list order),
-   * so "кінг", "стів кі" and "king" all find Stephen King.
-   */
   function searchAuthors(query, authors, lang, excludeIds, limit) {
     const q = normalize(query);
     if (q.replace(/ /g, '').length < 2) return [];
@@ -93,7 +99,6 @@
         const tokens = key.split(' ');
         const ok = words.every((w) => tokens.some((t) => t.startsWith(w)));
         if (!ok) return;
-        // prefer: whole name starts with the query, then the display language
         let score = key.startsWith(q) ? 0 : 2;
         if ((lang === 'uk' && ki === 0) || (lang === 'en' && ki === 1)) score -= 1;
         if (best === null || score < best) best = score;
@@ -108,14 +113,11 @@
     return lang === 'en' ? a.en : a.uk;
   }
 
-  // Exact match on any form of the name (used when the player presses Enter without picking from the list).
   function findExact(text, authors) {
     const q = normalize(text);
     if (!q) return null;
     return authors.find((a) => searchKeys(a).includes(q)) || null;
   }
-
-  /* ---- comparison ---- */
 
   function compare(guess, secret) {
     const sharedGenres = new Set(secret.genres);
@@ -124,18 +126,15 @@
       country: guess.country === secret.country,
       year: {
         match: guess.year === secret.year,
-        // direction toward the secret author: 'up' = secret was born later
         dir: guess.year === secret.year ? null : (secret.year > guess.year ? 'up' : 'down'),
       },
       genres: guess.genres.map((g) => ({ genre: g, match: sharedGenres.has(g) })),
-      // "Background": notable activities besides writing. Two authors with none at all also match.
       roles: guess.roles.map((r) => ({ role: r, match: sharedRoles.has(r) })),
       rolesSame: guess.roles.length === secret.roles.length && guess.roles.every((r) => sharedRoles.has(r)),
       correct: guess.id === secret.id,
     };
   }
 
-  // Approximate count of works -> a range, so nobody has to guess an exact number.
   const WORK_BUCKETS = [
     { max: 9, key: 'lt10' },
     { max: 29, key: '10_30' },
@@ -151,7 +150,6 @@
     return HINT_ORDER.slice(0, Math.max(0, Math.min(HINT_ORDER.length, wrongAttempts)));
   }
 
-  // Emoji-free share grid: white/black squares.
   function shareGrid(guesses, secret) {
     return guesses.map((g) => {
       const c = compare(g, secret);
@@ -161,7 +159,7 @@
   }
 
   const api = {
-    MAX_ATTEMPTS, HINT_ORDER, dayNumber, mulberry32, permutation, authorIndexForDay, authorOfDay,
+    MAX_ATTEMPTS, HINT_ORDER, dayNumber, mulberry32, cycleOrder, authorIndexForDay, authorOfDay, isUkrainian,
     normalize, searchAuthors, displayName, findExact, compare, worksBucket, revealedHints, shareGrid,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

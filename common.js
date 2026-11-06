@@ -1,9 +1,7 @@
 'use strict';
-/* Shared helpers: safe storage and stats. Used by index.html, stats.html and about.html. */
 (function () {
   const memory = new Map();
 
-  // localStorage can throw (private mode, blocked cookies, quota) — fall back to memory.
   const store = {
     get(key) {
       try { return localStorage.getItem(key); }
@@ -22,10 +20,9 @@
     return { games: 0, wins: 0, streak: 0, bestStreak: 0, dist: Array(MAX()).fill(0), lastWinEpoch: null, lastPlayEpoch: null };
   }
 
-  // Stats are shared by both languages: it is the same author on the same day.
   function loadStats() {
     let raw = {};
-    try { raw = JSON.parse(store.get('wxa_stats')) || {}; } catch (_) { /* corrupted -> defaults */ }
+    try { raw = JSON.parse(store.get('wxa_stats')) || {}; } catch (_) {  }
     const num = (v) => (Number.isFinite(v) && v >= 0 ? v : 0);
     const st = emptyStats();
     st.games = num(raw.games);
@@ -35,7 +32,6 @@
     st.lastWinEpoch = Number.isFinite(raw.lastWinEpoch) ? raw.lastWinEpoch : null;
     st.lastPlayEpoch = Number.isFinite(raw.lastPlayEpoch) ? raw.lastPlayEpoch : null;
     if (Array.isArray(raw.dist)) st.dist = st.dist.map((_, i) => num(raw.dist[i]));
-    // A streak only survives if the last win was today or yesterday.
     if (st.lastWinEpoch === null || st.lastWinEpoch < dayNumber() - 1) st.streak = 0;
     return st;
   }
@@ -44,11 +40,10 @@
     store.set('wxa_stats', JSON.stringify(st));
   }
 
-  // Called once when a day's game ends. `attempts` = guesses used.
   function recordResult(won, attempts) {
     const today = dayNumber();
     const st = loadStats();
-    if (st.lastPlayEpoch === today) return st; // never count a day twice
+    if (st.lastPlayEpoch === today) return st;
     st.games += 1;
     st.lastPlayEpoch = today;
     if (won) {

@@ -10,12 +10,10 @@ const $ = (id) => document.getElementById(id);
 const BY_ID = new Map(AUTHORS.map((a) => [a.id, a]));
 const STATE_KEY = 'wxa_state';
 
-let state = null;        // { day, secret, guesses: Author[] }
+let state = null;
 let suggestions = [];
 let activeIdx = -1;
 let lastFocus = null;
-
-/* ---------- state ---------- */
 
 function loadState() {
   const day = Logic.dayNumber();
@@ -29,11 +27,10 @@ function loadState() {
         .filter((id) => BY_ID.has(id) && !seen.has(id) && seen.add(id))
         .map((id) => BY_ID.get(id))
         .slice(0, MAX_ATTEMPTS);
-      // never keep guesses made after the secret was found
       const hit = guesses.findIndex((g) => g.id === secret.id);
       if (hit !== -1) guesses = guesses.slice(0, hit + 1);
     }
-  } catch (_) { /* corrupted -> new game */ }
+  } catch (_) {  }
   return { day, secret, guesses };
 }
 
@@ -45,8 +42,6 @@ const won = () => state.guesses.some((g) => g.id === state.secret.id);
 const lost = () => !won() && state.guesses.length >= MAX_ATTEMPTS;
 const finished = () => won() || lost();
 const wrongCount = () => state.guesses.filter((g) => g.id !== state.secret.id).length;
-
-/* ---------- names & labels ---------- */
 
 const name = (a) => Logic.displayName(a, I18N.getLang());
 const idx = () => (I18N.getLang() === 'en' ? 1 : 0);
@@ -67,8 +62,6 @@ function makeCell(label, value, matched, extraClass) {
   c.append(el('span', 'cell__label', label), el('span', 'cell__value', value));
   return c;
 }
-
-/* ---------- render ---------- */
 
 function renderHints() {
   const box = $('hints');
@@ -117,7 +110,6 @@ function renderGuess(g, n) {
   cmp.genres.forEach((x) => chips.appendChild(el('span', `chip${x.match ? ' chip--match' : ''}`, genreName(x.genre))));
   gc.append(el('span', 'cell__label', t('col_genres')), chips);
   cells.appendChild(gc);
-  // Background: a chip per activity ("—" = known only as a writer); white chip = shared with the author of the day.
   const rc = el('div', 'cell cell--genres');
   const rchips = el('div', 'chips');
   if (cmp.roles.length) cmp.roles.forEach((x) => rchips.appendChild(el('span', `chip${x.match ? ' chip--match' : ''}`, roleName(x.role))));
@@ -168,9 +160,6 @@ function renderAll() {
   if (!$('resultModal').hidden) renderResult();
 }
 
-/* ---------- screen-reader announcements ---------- */
-
-// Announce only the latest guess, not the whole re-rendered list.
 function announce(guess) {
   const c = Logic.compare(guess, state.secret);
   const m = (ok) => t(ok ? 'sr_match' : 'sr_miss');
@@ -185,8 +174,6 @@ function announce(guess) {
   else if (lost()) parts.push(t('sr_lost'));
   $('sr').textContent = parts.join(' ');
 }
-
-/* ---------- toasts ---------- */
 
 function showToast(message, ms = 2800) {
   let host = $('toast-host');
@@ -207,8 +194,6 @@ function showToast(message, ms = 2800) {
   requestAnimationFrame(() => box.classList.add('visible'));
   box._timer = setTimeout(remove, ms);
 }
-
-/* ---------- autocomplete (ARIA combobox) ---------- */
 
 function closeSuggestions() {
   const ul = $('suggestions');
@@ -253,15 +238,13 @@ function updateSuggestions() {
     li.id = `sg-${i}`;
     li.setAttribute('role', 'option');
     li.setAttribute('aria-selected', 'false');
-    li.addEventListener('pointerdown', (e) => e.preventDefault()); // keep input focus
+    li.addEventListener('pointerdown', (e) => e.preventDefault());
     li.addEventListener('click', () => submitGuess(a));
     ul.appendChild(li);
   });
   ul.hidden = false;
   $('guess-input').setAttribute('aria-expanded', 'true');
 }
-
-/* ---------- game ---------- */
 
 function submitGuess(author) {
   if (finished()) return;
@@ -293,10 +276,8 @@ function onSubmit() {
   submitGuess(pick);
 }
 
-/* ---------- result modal ---------- */
-
 function formatDate(iso) {
-  if (/^\d{4}$/.test(iso)) return iso; // exact day is not public
+  if (/^\d{4}$/.test(iso)) return iso;
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString(I18N.getLang() === 'en' ? 'en-GB' : 'uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
 }
@@ -321,7 +302,6 @@ function renderResult() {
   $('learnMore').href = 'https://www.google.com/search?q=' + encodeURIComponent(name(s));
 }
 
-// Keep keyboard focus and screen readers inside the dialog while it is open.
 function setBackgroundInert(on) {
   document.querySelectorAll('header.topbar, main').forEach((n) => { n.inert = on; });
 }
@@ -362,7 +342,6 @@ async function shareResult() {
   const date = formatDate(new Date(state.day * 86400000).toISOString().slice(0, 10));
   const score = `${won() ? state.guesses.length : 'X'}/${MAX_ATTEMPTS}`;
   const url = location.protocol === 'file:' ? '' : location.href.replace(/[#?].*$/, '');
-  // The author's name is deliberately not included.
   const text = `${t('share_title')} · ${date} · ${score}\n${Logic.shareGrid(state.guesses, state.secret)}`;
   if (navigator.share && url) {
     try { await navigator.share({ title: t('share_title'), text, url }); return; }
@@ -373,12 +352,10 @@ async function shareResult() {
   catch (_) { window.prompt('', full); }
 }
 
-/* ---------- language & day rollover ---------- */
-
 function switchLang() {
   const next = I18N.getLang() === 'uk' ? 'en' : 'uk';
   I18N.setLang(next);
-  try { history.replaceState(null, '', '?lang=' + next); } catch (_) { /* ignore */ }
+  try { history.replaceState(null, '', '?lang=' + next); } catch (_) {  }
   renderAll();
   if (!$('suggestions').hidden) updateSuggestions();
 }
@@ -390,8 +367,6 @@ function checkDayRollover() {
     renderAll();
   }
 }
-
-/* ---------- init ---------- */
 
 function init() {
   try {

@@ -1,24 +1,6 @@
 'use strict';
-/*
- * Author data. Authors come from https://sens.in.ua/avtory/ (the list entry is kept in `sens`), plus six major
- * Ukrainian figures added by request that were not in the part of the list we had (`sens: null`).
- * Facts were cross-checked against Wikidata (see tests/factcheck.js).
- *
- * Fields: id, uk, en, sens, born (ISO), died (year|null), country, genres, singer, pseudonym,
- *         award, classic, works (approx. number of published books), known uk|en (notable works, "|"-separated)
- *
- * Definitions used by the game:
- *  - roles:     notable activities besides writing, taken from the author's Wikipedia/Wikidata occupations
- *               (music, journalism, politics, activism, science, film, art, military, medicine, law, business, media, clergy, other)
- *  - pseudonym: known by, or published significant work under, a pen name (e.g. King / Bachman)
- *  - award:     won at least one major literary or other notable prize
- *  - classic:   canonical classic of national/world literature or of its genre
- *  - works:     approximate number of published books (shown only as a range)
- */
 (function (root) {
-  // id|uk|en|sens|born|died|country|genres|roles|pseudonym|award|classic|works|known uk|known en
   const RAW = [
-    // ---- Ukraine ----
     ['andrukhovych', 'Юрій Андрухович', 'Yuri Andrukhovych', 'Андрухович Юрій', '1960-03-13', null, 'UA', 'poetry,novel,essay', '', 0, 1, 0, 20, '«Рекреації»|«Московіада»', 'Recreations|The Moscoviad'],
     ['zhadan', 'Сергій Жадан', 'Serhiy Zhadan', 'Жадан Сергій', '1974-08-23', null, 'UA', 'poetry,novel', 'music', 0, 1, 0, 28, '«Месопотамія»|«Ворошиловград»', 'Mesopotamia|Voroshilovgrad'],
     ['zabuzhko', 'Оксана Забужко', 'Oksana Zabuzhko', 'Забужко Оксана', '1960-09-19', null, 'UA', 'novel,poetry,essay', '', 0, 1, 0, 30, '«Польові дослідження з українського сексу»|«Музей покинутих секретів»', 'Fieldwork in Ukrainian Sex|The Museum of Abandoned Secrets'],
@@ -59,7 +41,6 @@
     ['stefanyk', 'Василь Стефаник', 'Vasyl Stefanyk', 'Стефаник Василь', '1871-05-14', 1936, 'UA', 'shortstory', 'politics', 0, 0, 1, 5, '«Камінний хрест»|«Новина»', 'The Stone Cross|The News'],
     ['kokotiukha', 'Андрій Кокотюха', 'Andriy Kokotiukha', 'Кокотюха Андрій', '1970-11-17', null, 'UA', 'detective,historical,children', 'journalism,film', 0, 1, 0, 100, '«Червоний»', 'Red'],
 
-    // ---- Ukraine: added later (major figures). `sens: null` = not in the part of the sens.in.ua list we were given; added at the owner's request ----
     ['shevchenko', 'Тарас Шевченко', 'Taras Shevchenko', null, '1814-03-09', 1861, 'UA', 'poetry', 'art', 0, 0, 1, 10, '«Кобзар»|«Заповіт»', 'Kobzar|The Testament'],
     ['franko', 'Іван Франко', 'Ivan Franko', null, '1856-08-27', 1916, 'UA', 'poetry,novel,drama,essay', 'journalism,politics,science', 0, 0, 1, 100, '«Захар Беркут»|«Мойсей»', 'Zakhar Berkut|Moses'],
     ['khvylovy', 'Микола Хвильовий', 'Mykola Khvylovy', null, '1893-12-13', 1933, 'UA', 'shortstory,novel,essay', 'politics', 1, 0, 1, 10, '«Я (Романтика)»|«Вальдшнепи»', 'I (Romance)|Woodcocks'],
@@ -77,13 +58,11 @@
     ['hrinchenko', 'Борис Грінченко', 'Borys Hrinchenko', 'Грінченко Борис', '1863-12-09', 1910, 'UA', 'shortstory,poetry,nonfiction', 'science,activism', 1, 0, 1, 40, '«Словарь української мови»|«Під тихими вербами»', 'Dictionary of the Ukrainian Language|Under Quiet Willows'],
     ['deresh', 'Любко Дереш', 'Lubko Deresh', 'Дереш Любко', '1984-08-10', null, 'UA', 'novel,fantasy,shortstory', '', 0, 0, 0, 20, '«Культ»|«Поклоніння ящірці»', 'Cult|Worship of the Lizard'],
 
-    // ---- Added on request (batch 3) ----
     ['dron', 'Артур Дронь', 'Artur Dron', 'Дронь Артур', '2000-12-31', null, 'UA', 'poetry,essay,shortstory', 'journalism,military,media', 0, 1, 0, 4, '«Гуртожиток № 6»|«Гемінґвей нічого не знає»', 'Dormitory No. 6|Hemingway Knows Nothing'],
     ['pavliuk', 'Ілларіон Павлюк', 'Illarion Pavliuk', 'Павлюк Ілларіон', '1980-05-14', null, 'UA', 'thriller,scifi,novel', 'journalism,film,military', 0, 0, 0, 4, '«Білий попіл»|«Я бачу, вас цікавить пітьма»', 'White Ash|I See You Are Interested in Darkness'],
     ['derevianko', 'Павло Дерев’янко', 'Pavlo Derevianko', 'Дерев\'янко Павло', '1988-11-15', null, 'UA', 'fantasy,novel,shortstory', 'military,other', 0, 1, 0, 9, '«Аркан вовків»|«Крук»', 'Arkan of Wolves|Kruk'],
     ['taratorina', 'Світлана Тараторіна', 'Svitlana Taratorina', 'Тараторіна Світлана', '1985-09-25', null, 'UA', 'fantasy,novel,children', 'journalism', 0, 1, 0, 4, '«Лазарус»|«Дім солі»', 'Lazarus|House of Salt'],
 
-    // ---- World ----
     ['adams', 'Дуґлас Адамс', 'Douglas Adams', 'Адамс Дуґлас', '1952-03-11', 2001, 'GB', 'scifi,satire', 'other', 0, 0, 0, 10, '«Автостопом по Галактиці»', 'The Hitchhiker’s Guide to the Galaxy'],
     ['asimov', 'Айзек Азімов', 'Isaac Asimov', 'Азімов Айзек', '1920-01-02', 1992, 'US', 'scifi,nonfiction,detective', 'science', 0, 1, 1, 400, '«Я, робот»|«Фундація»', 'I, Robot|Foundation'],
     ['andersen', 'Ганс Крістіан Андерсен', 'Hans Christian Andersen', 'Андерсен Крістіан Ганс', '1805-04-02', 1875, 'DK', 'fairytale,children,novel', '', 0, 0, 1, 160, '«Снігова королева»|«Гидке каченя»', 'The Snow Queen|The Ugly Duckling'],
@@ -159,6 +138,45 @@
     ['bardugo', 'Лі Бардуґо', 'Leigh Bardugo', 'Бардуґо Лі', '1975-04-06', null, 'US', 'fantasy,novel', 'film', 0, 0, 0, 15, '«Тінь та кістка»|«Шістка воронів»', 'Shadow and Bone|Six of Crows'],
     ['harperlee', 'Гарпер Лі', 'Harper Lee', 'Лі Гарпер', '1926-04-28', 2016, 'US', 'novel', '', 0, 1, 1, 2, '«Убити пересмішника»|«Піди, постав сторожа»', 'To Kill a Mockingbird|Go Set a Watchman'],
 
+    ['woolf', 'Вірджинія Вульф', 'Virginia Woolf', 'Вульф Вірджинія', '1882-01-25', 1941, 'GB', 'novel,essay', 'business', 0, 0, 1, 15, '«До маяка»|«Місіс Делловей»', 'To the Lighthouse|Mrs Dalloway'],
+    ['vonnegut', 'Курт Воннеґут', 'Kurt Vonnegut', 'Воннеґут Курт', '1922-11-11', 2007, 'US', 'scifi,satire,novel', 'military,activism', 0, 1, 1, 25, '«Бійня номер п’ять»|«Колиска для кішки»', 'Slaughterhouse-Five|Cat’s Cradle'],
+    ['mann', 'Томас Манн', 'Thomas Mann', 'Манн Томас', '1875-06-06', 1955, 'DE', 'novel,shortstory,essay', '', 0, 1, 1, 25, '«Будденброки»|«Зачарована гора»', 'Buddenbrooks|The Magic Mountain'],
+    ['proust', 'Марсель Пруст', 'Marcel Proust', 'Пруст Марсель', '1871-07-10', 1922, 'FR', 'novel', '', 0, 1, 1, 5, '«У пошуках утраченого часу»|«У затінку дівчат-квіток»', 'In Search of Lost Time|In the Shadow of Young Girls in Flower'],
+    ['sartre', 'Жан-Поль Сартр', 'Jean-Paul Sartre', 'Сартр Жан-Поль', '1905-06-21', 1980, 'FR', 'philosophy,novel,drama', 'activism,journalism', 0, 1, 1, 40, '«Нудота»|«Буття і ніщо»', 'Nausea|Being and Nothingness'],
+    ['beauvoir', 'Сімона де Бовуар', 'Simone de Beauvoir', 'Бовуар Сімона де', '1908-01-09', 1986, 'FR', 'philosophy,novel,essay', 'activism', 0, 1, 1, 25, '«Друга стать»|«Мандарини»', 'The Second Sex|The Mandarins'],
+    ['melville', 'Герман Мелвілл', 'Herman Melville', 'Мелвілл Герман', '1819-08-01', 1891, 'US', 'novel,adventure,shortstory', 'other', 0, 0, 1, 12, '«Мобі Дік»', 'Moby-Dick'],
+    ['hawthorne', 'Натаніель Готорн', 'Nathaniel Hawthorne', 'Готорн Натаніель', '1804-07-04', 1864, 'US', 'novel,shortstory,gothic', 'politics', 0, 0, 1, 15, '«Червона літера»', 'The Scarlet Letter'],
+    ['ibsen', 'Генрік Ібсен', 'Henrik Ibsen', 'Ібсен Генрік', '1828-03-20', 1906, 'NO', 'drama', '', 0, 0, 1, 26, '«Ляльковий дім»|«Пер Гюнт»', 'A Doll’s House|Peer Gynt'],
+    ['kundera', 'Мілан Кундера', 'Milan Kundera', 'Кундера Мілан', '1929-04-01', 2023, 'CZ', 'novel,essay', '', 0, 1, 0, 20, '«Нестерпна легкість буття»|«Жарт»', 'The Unbearable Lightness of Being|The Joke'],
+    ['hasek', 'Ярослав Гашек', 'Jaroslav Hašek', 'Гашек Ярослав', '1883-04-30', 1923, 'CZ', 'satire,novel', 'journalism,military', 0, 0, 1, 12, '«Пригоди бравого вояка Швейка»', 'The Good Soldier Švejk'],
+    ['maugham', 'Вільям Сомерсет Моем', 'W. Somerset Maugham', 'Моем Сомерсет Вільям', '1874-01-25', 1965, 'GB', 'novel,shortstory,drama', 'medicine', 0, 0, 1, 80, '«Тягар пристрастей людських»|«На жалі бритви»', 'Of Human Bondage|The Razor’s Edge'],
+    ['milne', 'Алан Мілн', 'A. A. Milne', 'Мілн Алан', '1882-01-18', 1956, 'GB', 'children,drama,poetry', 'journalism,military', 0, 0, 1, 25, '«Вінні-Пух»', 'Winnie-the-Pooh'],
+    ['scott', 'Вальтер Скотт', 'Walter Scott', 'Скотт Валтер', '1771-08-15', 1832, 'GB', 'historical,novel,poetry', 'law', 0, 0, 1, 40, '«Айвенго»|«Веверлі»', 'Ivanhoe|Waverley'],
+    ['dick', 'Філіп К. Дік', 'Philip K. Dick', 'Дік Філіп К.', '1928-12-16', 1982, 'US', 'scifi,novel', '', 0, 1, 1, 45, '«Чи мріють андроїди про електричних овець?»|«Людина у високому замку»', 'Do Androids Dream of Electric Sheep?|The Man in the High Castle'],
+    ['kerouac', 'Джек Керуак', 'Jack Kerouac', 'Керуак Джек', '1922-03-12', 1969, 'US', 'novel,poetry', '', 0, 0, 1, 25, '«У дорозі»|«Волоцюги Дхарми»', 'On the Road|The Dharma Bums'],
+    ['mccarthy', 'Кормак Маккарті', 'Cormac McCarthy', 'Маккарті Кормак', '1933-07-20', 2023, 'US', 'novel,thriller', '', 0, 1, 0, 12, '«Дорога»|«Кривавий меридіан»', 'The Road|Blood Meridian'],
+    ['llosa', 'Маріо Варгас Льйоса', 'Mario Vargas Llosa', 'Льйоса Маріо Варгас', '1936-03-28', 2025, 'PE', 'novel,essay,drama', 'politics,journalism', 0, 1, 0, 40, '«Зелений дім»|«Сон кельта»', 'The Green House|The Dream of the Celt'],
+    ['cortazar', 'Хуліо Кортасар', 'Julio Cortázar', 'Кортасар Хуліо', '1914-08-26', 1984, 'AR', 'shortstory,novel', '', 0, 1, 1, 27, '«Гра в класи»', 'Hopscotch'],
+    ['pamuk', 'Орхан Памук', 'Orhan Pamuk', 'Памук Орхан', '1952-06-07', null, 'TR', 'novel,historical,essay', 'science', 0, 1, 0, 20, '«Мене називають Червоним»|«Сніг»', 'My Name Is Red|Snow'],
+    ['sienkiewicz', 'Генрик Сенкевич', 'Henryk Sienkiewicz', 'Сенкевич Генрик', '1846-05-05', 1916, 'PL', 'historical,novel,adventure', 'journalism', 0, 1, 1, 25, '«Камо грядеши»|«Вогнем і мечем»', 'Quo Vadis|With Fire and Sword'],
+    ['lagerlof', 'Сельма Лаґерлеф', 'Selma Lagerlöf', 'Лаґерлеф Сельма', '1858-11-20', 1940, 'SE', 'children,novel,fairytale', 'other', 0, 1, 1, 32, '«Чудесна мандрівка Нільса Гольґерсона з дикими гусьми»|«Сага про Єсту Берлінга»', 'The Wonderful Adventures of Nils|Gösta Berling’s Saga'],
+    ['larsson', 'Стіґ Ларссон', 'Stieg Larsson', 'Ларссон Стіґ', '1954-08-15', 2004, 'SE', 'detective,thriller,novel', 'journalism,activism', 0, 1, 0, 3, '«Чоловіки, що ненавидять жінок»|«Дівчина, що гралася з вогнем»', 'The Girl with the Dragon Tattoo|The Girl Who Played with Fire'],
+    ['nesbo', 'Ю Несбьо', 'Jo Nesbø', 'Несбьо Ю', '1960-03-29', null, 'NO', 'detective,thriller,children', 'music,business', 0, 1, 0, 33, '«Сніговик»|«Нетопир»', 'The Snowman|The Bat'],
+    ['green', 'Джон Грін', 'John Green', 'Грін Джон', '1977-08-24', null, 'US', 'novel,romance', 'media', 0, 1, 0, 8, '«Провина зірок»|«Паперові міста»', 'The Fault in Our Stars|Paper Towns'],
+    ['collins', 'Сьюзен Коллінз', 'Suzanne Collins', 'Коллінз Сьюзанна', '1962-08-10', null, 'US', 'scifi,novel,children', 'film', 0, 1, 0, 12, '«Голодні ігри»', 'The Hunger Games'],
+    ['riordan', 'Рік Ріордан', 'Rick Riordan', 'Ріордан Рік', '1964-06-05', null, 'US', 'fantasy,children,adventure', 'other', 0, 1, 0, 40, '«Персі Джексон і Олімпійці»', 'Percy Jackson & the Olympians'],
+    ['meyer', 'Стефені Маєр', 'Stephenie Meyer', 'Маєр Стефені', '1973-12-24', null, 'US', 'fantasy,romance,novel', 'film', 0, 0, 0, 8, '«Сутінки»|«Молодий місяць»', 'Twilight|New Moon'],
+    ['roth', 'Вероніка Рот', 'Veronica Roth', 'Рот Вероніка', '1988-08-19', null, 'US', 'scifi,novel', '', 0, 1, 0, 8, '«Нескорена»', 'Divergent'],
+    ['moyes', 'Джоджо Мойєс', 'Jojo Moyes', 'Мойєс Джоджо', '1969-08-04', null, 'GB', 'romance,novel', 'journalism', 0, 1, 0, 20, '«До зустрічі з тобою»|«Останній лист від твого коханого»', 'Me Before You|The Last Letter from Your Lover'],
+    ['sparks', 'Ніколас Спаркс', 'Nicholas Sparks', 'Спаркс Ніколас', '1965-12-31', null, 'US', 'romance,novel', 'film', 0, 0, 0, 24, '«Щоденник пам’яті»|«Любий Джон»', 'The Notebook|Dear John'],
+    ['ahern', 'Сесілія Ахерн', 'Cecelia Ahern', 'Ахерн Сесілія', '1981-09-30', null, 'IE', 'romance,novel', 'film', 0, 1, 0, 18, '«P.S. Я люблю тебе»|«Де закінчується райдуга»', 'PS, I Love You|Love, Rosie'],
+    ['clarke', 'Артур Кларк', 'Arthur C. Clarke', 'Кларк Артур', '1917-12-16', 2008, 'GB', 'scifi,nonfiction,novel', 'science,military', 0, 1, 1, 100, '«2001: Космічна Одіссея»|«Побачення з Рамою»', '2001: A Space Odyssey|Rendezvous with Rama'],
+    ['dreiser', 'Теодор Драйзер', 'Theodore Dreiser', 'Драйзер Теодор', '1871-08-27', 1945, 'US', 'novel', 'journalism', 0, 0, 1, 15, '«Сестра Керрі»|«Американська трагедія»', 'Sister Carrie|An American Tragedy'],
+    ['boll', 'Генріх Белль', 'Heinrich Böll', 'Белль Генріх', '1917-12-21', 1985, 'DE', 'novel,shortstory', 'military', 0, 1, 1, 40, '«Очима клоуна»|«Більярд о пів на десяту»', 'The Clown|Billiards at Half-past Nine'],
+    ['akutagawa', 'Рюноске Акутаґава', 'Ryūnosuke Akutagawa', 'Акутаґава Рюноске', '1892-03-01', 1927, 'JP', 'shortstory', '', 0, 0, 1, 20, '«Расьомон»|«Павутинка»', 'Rashōmon|The Spider’s Thread'],
+    ['dazai', 'Осаму Дадзай', 'Osamu Dazai', 'Дазай Осаму', '1909-06-19', 1948, 'JP', 'novel,shortstory', '', 1, 0, 1, 25, '«Сонце на заході»|«Крах людини»', 'The Setting Sun|No Longer Human'],
+    ['kawabata', 'Ясунарі Кавабата', 'Yasunari Kawabata', 'Кавабата Ясунарі', '1899-06-11', 1972, 'JP', 'novel,shortstory', '', 0, 1, 1, 25, '«Країна снігів»|«Тисяча журавлів»', 'Snow Country|Thousand Cranes'],
+
   ];
 
   const KEYS = ['id', 'uk', 'en', 'sens', 'born', 'died', 'country', 'genres', 'roles', 'pseudonym', 'award', 'classic', 'works', 'knownUk', 'knownEn'];
@@ -171,31 +189,29 @@
     a.pseudonym = !!a.pseudonym;
     a.award = !!a.award;
     a.classic = !!a.classic;
-    a.year = Number(a.born.slice(0, 4)); // `born` may be just a year when the exact date is not public
+    a.year = Number(a.born.slice(0, 4));
     a.known = { uk: a.knownUk.split('|'), en: a.knownEn.split('|') };
     delete a.knownUk;
     delete a.knownEn;
     return a;
   });
 
-  // Display names for countries and genres (uk / en).
   const COUNTRIES = {
     UA: ['Україна', 'Ukraine'], GB: ['Велика Британія', 'United Kingdom'], US: ['США', 'USA'],
     FR: ['Франція', 'France'], DE: ['Німеччина', 'Germany'], IE: ['Ірландія', 'Ireland'],
     PL: ['Польща', 'Poland'], CZ: ['Чехія', 'Czechia'], AR: ['Аргентина', 'Argentina'],
     CO: ['Колумбія', 'Colombia'], JP: ['Японія', 'Japan'], CA: ['Канада', 'Canada'],
     SE: ['Швеція', 'Sweden'], IT: ['Італія', 'Italy'],
-    BR: ['Бразилія', 'Brazil'], DK: ['Данія', 'Denmark'], AF: ['Афганістан', 'Afghanistan'], CY: ['Кіпр', 'Cyprus'],
+    BR: ['Бразилія', 'Brazil'], DK: ['Данія', 'Denmark'], AF: ['Афганістан', 'Afghanistan'], CY: ['Кіпр', 'Cyprus'], PE: ['Перу', 'Peru'], TR: ['Туреччина', 'Turkey'], NO: ['Норвегія', 'Norway'],
   };
 
-  // Notable activities besides writing (the "Background" column).
   const ROLES = {
     music: ['музика', 'music'], journalism: ['журналістика', 'journalism'], politics: ['політика', 'politics'],
     activism: ['активізм', 'activism'], science: ['наука', 'science'], film: ['кіно', 'film'],
     art: ['мистецтво', 'visual art'], military: ['військова служба', 'military'],
     medicine: ['медицина', 'medicine'], law: ['право', 'law'], business: ['бізнес', 'business'],
     media: ['медіа', 'media'], clergy: ['духовенство', 'clergy'],
-    other: ['інша діяльність', 'other activity'], // a notable activity outside the list above (teaching, travel, inventing, environmental work…)
+    other: ['інша діяльність', 'other activity'],
   };
 
   const GENRES = {
